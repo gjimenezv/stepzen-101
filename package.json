@@ -1,0 +1,18 @@
+{
+  "name": "stepzen-movie-db-rotten-tomatoes",
+  "version": "1.0.0",
+  "description": "Fetch upcoming movies from Movie DB and cross search with Rotten Romatoes to know the score",
+  "main": "src/index.js",
+  "scripts": {
+    "prestart": "node login.js",
+    "start": "stepzen start"
+  },
+  "dependencies": {
+    "dotenv": "10.0.0",
+    "stepzen": "0.20.1"
+  },
+  "devDependencies": {
+    "nodemon": "1.18.4"
+  },
+  "keywords": ["stepzen", "rotten tomatoes", "movie db"]
+}

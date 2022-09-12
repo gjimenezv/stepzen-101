@@ -1,0 +1,72 @@
+type Movie {
+  id: Int!
+  original_title: String!
+  popularity: Float
+  release_date: String
+  title: String!
+  vote_average: Int
+  vote_count: Int
+  genre_ids: [Int]
+  genre: [Genre]
+    @materializer(
+      query: "genres"
+      arguments: [{ name: "ids", field: "genre_ids" }]
+    )
+  rottenReview: [RottenReview]
+    @materializer(
+      query: "rottenReviewByMovie"
+      arguments: [{ name: "title", field: "title" }]
+    )
+}
+
+type RottenReview {
+  meterScore: Int
+  meterClass: String
+  year: Int
+}
+
+type Review {
+  author: String!
+  content: String!
+  rating: Float
+  url: String!
+}
+
+type Genre {
+  id: Int
+  name: String
+}
+
+type Query {
+  upcomingMovies: [Movie]
+    @rest(
+      endpoint: "https://api.themoviedb.org/3/movie/upcoming?api_key=$apikey"
+      configuration: "movie_db_config"
+      resultroot: "results[]"
+    )
+
+  rottenReviewByMovie(title: String!): [RottenReview]
+    @rest(
+      endpoint: "https://www.rottentomatoes.com/api/private/v2.0/search/?q=$title"
+      resultroot: "movies[]"
+    )
+
+  genres(ids: [Int]): [Genre]
+    @rest(
+      endpoint: "https://api.themoviedb.org/3/genre/movie/list?api_key=$apikey"
+      configuration: "movie_db_config"
+      method: GET
+      ecmascript: """
+      function transformREST(s) {
+        try {
+          const allGenres = JSON.parse(s);
+          const genresIds = get("ids")
+          const response = allGenres.genres.filter((gender) => genresIds.includes(gender.id))
+          return JSON.stringify(response);
+        }catch(e) {
+          return []
+        }
+      }
+      """
+    )
+}

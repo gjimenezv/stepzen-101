@@ -1,0 +1,4 @@
+configurationset:
+  - configuration:
+      name: movie_db_config
+      apikey: MOVIE_DB_API_KEY
