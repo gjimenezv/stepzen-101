@@ -1,35 +1,35 @@
 type Movie {
   id: Int!
-  original_title: String!
   popularity: Float
   release_date: String
   title: String!
   vote_average: Int
   vote_count: Int
   genre_ids: [Int]
-  genre: [Genre]
+  genres: [Genre]
     @materializer(
       query: "genres"
       arguments: [{ name: "ids", field: "genre_ids" }]
     )
-  rottenReview: [RottenReview]
+  review: Review
     @materializer(
-      query: "rottenReviewByMovie"
+      query: "reviewByMovie"
       arguments: [{ name: "title", field: "title" }]
     )
 }
 
-type RottenReview {
-  meterScore: Int
-  meterClass: String
-  year: Int
+type Rating {
+  Source: String
+  Value: String
 }
 
 type Review {
-  author: String!
-  content: String!
-  rating: Float
-  url: String!
+  title: String
+  year: String
+  ratings: [Rating]
+  rottenScore: Int
+  metaScore: Int
+  boxOffice: Int
 }
 
 type Genre {
@@ -38,17 +38,35 @@ type Genre {
 }
 
 type Query {
-  upcomingMovies: [Movie]
+  nowPlayingMovies: [Movie]
     @rest(
-      endpoint: "https://api.themoviedb.org/3/movie/upcoming?api_key=$apikey"
+      endpoint: "https://api.themoviedb.org/3/movie/now_playing?api_key=$apikey"
       configuration: "movie_db_config"
       resultroot: "results[]"
     )
 
-  rottenReviewByMovie(title: String!): [RottenReview]
+  reviewByMovie(title: String!): Review
     @rest(
-      endpoint: "https://www.rottentomatoes.com/api/private/v2.0/search/?q=$title"
-      resultroot: "movies[]"
+      endpoint: "https://omdbapi.com/?apikey=$apikey&t=$title"
+      configuration: "omdb_config"
+      method: GET
+      ecmascript: """
+      function transformREST(s) {
+        try {
+          const review = JSON.parse(s);
+          const rottenScore = review.Ratings.find(rating => rating.Source === "Rotten Tomatoes")
+          return {
+            title: review.Title,
+            year: review.Year,
+            metaScore: parseInt(review.Metascore),
+            boxOffice: parseInt(review.BoxOffice.replace("$", "").replace(/,/g, "")),
+            rottenScore: parseInt(rottenScore.Value.replace("%", ""))
+          };
+        }catch(e) {
+          return {}
+        }
+      }
+      """
     )
 
   genres(ids: [Int]): [Genre]
